@@ -3,10 +3,10 @@ import Spinner from "./Spinner";
 import CityItem from "./CityItem";
 import { useContext } from "react";
 import { CitiesContext } from "../context/CitiesContext";
+import Message from "./Message";
 
 export default function CityList() {
-  const { cities, loading, setCurrentCity, currentCity } =
-    useContext(CitiesContext);
+  const { cities, loading, getCity, currentCity } = useContext(CitiesContext);
   const currentId = currentCity.id;
   if (loading) {
     return (
@@ -14,6 +14,9 @@ export default function CityList() {
         <Spinner />
       </>
     );
+  }
+  if (!cities.length) {
+    return <Message message="No cities found." />;
   }
   return (
     <ul className={styles.cityList}>
@@ -26,7 +29,7 @@ export default function CityList() {
           emoji={city.emoji}
           id={city.id}
           currentId={currentId}
-          onClick={() => setCurrentCity(city)}
+          onClick={() => getCity(city.id)}
         />
       ))}
     </ul>

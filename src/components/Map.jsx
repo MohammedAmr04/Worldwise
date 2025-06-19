@@ -7,56 +7,97 @@ import {
   Marker,
   Popup,
   TileLayer,
+  useMap,
   useMapEvents,
 } from "react-leaflet";
+import { useContext, useEffect, useState } from "react";
+import { CitiesContext } from "../context/CitiesContext";
+import PropTypes from "prop-types";
+import { emojiToCountryCode } from "./CityItem";
 export default function Map() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const { cities } = useContext(CitiesContext);
+
+  const [searchParams] = useSearchParams();
+  const [mapPosition, setMapPosition] = useState([41.505, -0.09]);
+  const mapLat = searchParams.get("lat");
+  const mapLng = searchParams.get("lng");
+
+  // const navigate = useNavigate();
   const {
-    position,
+    position: geoPosition,
     isLoading: isLoadingPosition,
     getLocation,
   } = useGeolocation();
 
-  function MyComponent() {
-    const map = useMapEvents({
-      click: () => {
-        navigate("form");
-        map.locate();
-      },
-      locationfound: (location) => {
-        console.log("🟩 location: ", location);
+  useEffect(
+    function () {
+      if (geoPosition) setMapPosition([geoPosition.lat, geoPosition.lng]);
+    },
+    [geoPosition]
+  );
 
-        setSearchParams({ lat: location.latlng.lat, lng: location.latlng.lng });
-      },
-    });
-    return null;
-  }
-
+  useEffect(() => {
+    if (mapLat && mapLng) setMapPosition([mapLat, mapLng]);
+  }, [mapLat, mapLng]);
   return (
     <div className={styles.mapContainer}>
+      {!geoPosition && (
+        <Button type={"position"} onClick={getLocation}>
+          {isLoadingPosition ? "loading" : `use your positon`}
+        </Button>
+      )}
       <MapContainer
         className={styles.map}
-        center={position || [51.505, -0.09]}
-        zoom={13}
-        scrollWheelZoom={false}
+        center={mapPosition}
+        zoom={6}
+        scrollWheelZoom={true}
       >
-        {!position && (
-          <Button type={"position"} onClick={getLocation}>
-            {isLoadingPosition ? "loading" : `use your positon`}
-          </Button>
-        )}
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          url="https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"
         />
-        <MyComponent />
-        <Marker position={[51.505, -0.09]}>
-          <Popup>
-            A pretty CSS3 popup. <br /> Easily customizable.
-          </Popup>
-        </Marker>
+
+        {cities.map((city) => (
+          <Marker
+            key={city.id}
+            position={[city.position.lat, city.position.lng]}
+          >
+            <Popup key={city.id}>
+              <span>
+                <img
+                  src={`https://flagcdn.com/${emojiToCountryCode(
+                    city.emoji
+                  ).toLowerCase()}.svg`}
+                  width={32}
+                  alt={emojiToCountryCode(city.emoji).toLowerCase()}
+                />
+              </span>
+              <span>{city.cityName}</span>
+            </Popup>
+          </Marker>
+        ))}
+        <ChangePosition position={mapPosition} />
+        <DetectClick />
       </MapContainer>
     </div>
   );
 }
+
+function ChangePosition({ position }) {
+  const map = useMap();
+  map.setView(position);
+  return null;
+}
+function DetectClick() {
+  const navigate = useNavigate();
+
+  useMapEvents({
+    click: (e) => navigate(`form?lat=${e.latlng.lat}&lng=${e.latlng.lng}`),
+  });
+}
+
+ChangePosition.propTypes = {
+  position: PropTypes.arrayOf(
+    PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+  ).isRequired,
+};

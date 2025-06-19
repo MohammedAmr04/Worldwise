@@ -2,6 +2,7 @@ import styles from "./City.module.css";
 import ButtonBack from "./ButtonBack";
 import { useContext } from "react";
 import { CitiesContext } from "../context/CitiesContext";
+import { emojiToCountryCode } from "./CityItem";
 
 const formatDate = (date) =>
   new Intl.DateTimeFormat("en", {
@@ -20,7 +21,18 @@ function City() {
       <div className={styles.row}>
         <h6>City name</h6>
         <h3>
-          <span>{emoji}</span> {cityName}
+          <span>
+            {
+              <img
+                src={`https://flagcdn.com/${emojiToCountryCode(
+                  emoji
+                ).toLowerCase()}.svg`}
+                width={32}
+                alt={emojiToCountryCode(emoji).toLowerCase()}
+              />
+            }
+          </span>{" "}
+          {cityName}
         </h3>
       </div>
 
